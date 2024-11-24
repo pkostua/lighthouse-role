@@ -1,0 +1,56 @@
+---
+# tasks file for vector-role
+  - name: Установка необходимых пакетов
+    become: true
+    package:
+      name:
+        - unzip
+        - curl
+      state: present
+
+  - name: Скачивание статического файла LightHouse
+    become: true
+    get_url:
+      url: "{{ lighthouse_static_url }}"
+      dest: "/tmp/lighthouse-cli.zip"
+  - name: Creates directory
+    become: true
+    ansible.builtin.file:
+      path: "{{ lighthouse_static_dir }}"
+      state: directory
+  - name: Распаковка LightHouse
+    become: true
+    unarchive:
+      src: "/tmp/lighthouse-cli.zip"
+      dest: "{{ lighthouse_static_dir }}"
+      remote_src: yes
+
+
+  - name: Установка epel-release на CentOS/RHEL
+    become: true
+    yum:
+      name: epel-release
+      state: present
+  - name: Установка Nginx на CentOS/RHEL
+    become: true
+    yum:
+      name: nginx
+      state: present
+
+  - name: Настройка конфигурации Nginx для LightHouse
+    become: true
+    template:
+      src: "{{ nginx_conf_template }}"
+      dest: "/etc/nginx/conf.d/lighthouse.conf"
+
+  - name: Перезапуск Nginx для применения изменений
+    become: true
+    service:
+      name: nginx
+      state: restarted
+
+  - name: Убедиться, что Nginx запущен и работает
+    become: true
+    service:
+      name: nginx
+      state: started
